@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {body, validationResult} = require('express-validator');
 const pool = require('../database');
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 router.post('/signup', [
     // Validate username
@@ -51,8 +52,42 @@ router.post('/signup', [
         console.error('MySQL Error:', error);
         res.status(500).json({ message: 'Internal Server Error' });
       }
-
   }
+)
+
+router.post('/login', [
+    body('user').trim().notEmpty().withMessage('Username is required').isLength({ min: 4 }).withMessage('Invalid user details!'),
+    body('password').trim().notEmpty().withMessage('Password is required')
+    ],
+    async(req,res)=>{
+        const {user, password} = req.body;
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            return res.status(400).json({errors: errors.array()})
+        }
+        try {
+
+            const [foundUser] = await pool.query('SELECT * FROM users WHERE username = ? OR email = ?', [user, user]);
+            // if user is not found
+            if(foundUser.length === 0){
+                return res.status(404).json({message:"No user found with that username/email"})
+            }
+            // else compare pass
+            const matchPass = await bcrypt.compare(password, foundUser[0].password);
+            if(!matchPass){ //if password does not match, return error
+                return res.status(401).json({message:"Incorrect password!"})
+            }
+            //else info is correct, create a jwt for login
+            const payload = {user: foundUser[0].email} //since email is unique, we can use it for creating jwt
+            const secretKey = process.env.JWT_SECRET_KEY;
+            const token = await jwt.sign(payload, secretKey)
+            res.status(200).json({message:"Logged in successfully", token: token})
+
+        } catch (error) {
+            console.error('MySQL Error:', error);
+            res.status(500).json({ message: 'Internal Server Error' });
+          }
+    }
 )
 
 module.exports = router;

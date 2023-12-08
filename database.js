@@ -9,5 +9,4 @@ const pool = mysql.createPool({
     connectionLimit: 15,
     queueLimit: 0
 });
-console.log('Pool found')
 module.exports  = pool;
