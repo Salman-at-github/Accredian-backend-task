@@ -80,7 +80,7 @@ router.post('/login', [
             //else info is correct, create a jwt for login
             const payload = {user: foundUser[0].email} //since email is unique, we can use it for creating jwt
             const secretKey = process.env.JWT_SECRET_KEY;
-            const token = await jwt.sign(payload, secretKey)
+            const token = await jwt.sign(payload, secretKey, {expiresIn:'24h'})
             res.status(200).json({message:"Logged in successfully", token: token})
 
         } catch (error) {

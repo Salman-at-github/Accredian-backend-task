@@ -11,6 +11,8 @@ app.use(express.json());
 const corsOptions = {
     origin: process.env.CORS_HOST,
     optionsSuccessStatus: 204,
+    methods: 'GET,POST,PUT,DELETE,HEAD',
+    credentials: true
 }
 app.use(cors(corsOptions))
 app.use('/api', require('./routes/userRoutes'))
